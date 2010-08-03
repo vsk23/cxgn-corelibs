@@ -36,12 +36,12 @@ while ( my ($key, $value) = each(%$contig_info) ) {
 }
 
 #TESTING INFORMATION IN THE HASH#
-is ($contig_info->{"Nsyl_c4415_sc"}, "[1-554]", "Nsyl_c4415 seq coords");
+is ($contig_info->{"Nsyl_c4415_sc"}, "[116-668]", "Nsyl_c4415 seq coords");
 like($contig_info->{"Nsyl_c4415"},qr/TATTTT/, "Nsyl_c4415 sequence");
 is ($contig_info->{"Nsyl_c4415_READCOORDS"},"[1-554]","Nsyl_c4415 read coords");
 is ($contig_info->{"Nsyl_c4415_SAMPLE"},"tomamtoes", "Nsyl_c4415 sample");
 is ($contig_info->{"Nsyl_c4415_PARENT"}, "step3_c10005","Nsyl_c4415 parent");
-is ($contig_info->{"Ntab_s96186_sc"},"[1-424]", "Ntab_s96186 sequence coordinates");
+is ($contig_info->{"Ntab_s96186_sc"},"[60-482]", "Ntab_s96186 sequence coordinates");
 is ($contig_info->{"Ntab_s96186_READCOORDS"},"[1-424]", "Ntab_s96186 read coordinates");
 is ($contig_info->{"Ntab_s96186_PARENT"},"step3_c10005", "Ntab_s96186 parent");
 is ($contig_info->{"Ntab_s96186_SAMPLE"},"tomamtoes","Ntab_c96186 sample");

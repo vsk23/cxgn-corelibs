@@ -151,21 +151,23 @@ while(defined(fileno($data_handle))){
           }        
 	elsif($line=~m/$contig_id?/){
 	    print " contig id matched \n";
-           if($line=~m/^(\S+)\t?(\S+)\t?(\S+)\t?(\d?)\t?(\d+)\t?\.\t?\+\t?\.\t?\s*(\S*)/){ # if read
+            my @line = split('\t',$line);
+          # if($line=~m/^(\S+)\t?(\S+)\t?(\S+)\t?(\d?)\t?(\d+)\t?\.\t?\+\t?\.\t?(\S*)/){ # if read
 	   print " found read annotation\n";
 	     $location = tell($data_handle);
-	     my $read_id = $1;
-             $output_hash{$read_id."_sc"} = "[".$4."-".$5."]";
+	     my $read_id = $line[0];
+             $output_hash{$read_id."_sc"} = "[".$line[3]."-".$line[4]."]";
                #GROUP: contains information in tag=value format#
-             my @group = split(';',$6);
-             print "GROUP INFO: $6 \n";
+             my @group = split(';',$line[8]);
+             print "GROUP INFO: $line[8] \n";
 	     foreach my $info(@group){
 		 my @split = split('=',$info);
                  $output_hash{$read_id."_".$split[0]}= $split[1];
-	     }   
-             print $index_hash_ref->{$read_id."_seq"}."\n";           
+	     } 
+            print $index_hash_ref->{$read_id."_seq"}."\n";           
              seek($data_handle,$index_hash_ref->{$read_id."_seq"},0);
-	   CXGN::BioTools::GffTools-> print_sequence(\%output_hash,$data_handle, $read_id, $location);}
+	   CXGN::BioTools::GffTools-> print_sequence(\%output_hash,$data_handle, $read_id, $location);#}
+ 
       }else{ # reached end of information for this contig.
 	close($data_handle);
       }

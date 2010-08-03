@@ -150,9 +150,10 @@ while($stop eq "false" && defined(fileno($data_handle))){
               $identifier = "CO";
 	     }
 	   if(defined(fileno($data_handle))){
-              if($line=~m/^RD\s+(\S+)\s+/){
+              if($line=~m/^RD\s+(\S+)\s+(\d+)/){
 	          $identifier = "RD";
 	          $read_id = $1; 
+		  $read_length=$2;
 	          $end= "false";
 	        }
              # check the appropriate tags 
@@ -168,7 +169,6 @@ while($stop eq "false" && defined(fileno($data_handle))){
                     }            
                   if($line=~m/^QA\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+/){
 	             $id_and_seq_data{$read_id."_rc"} = "[".$3."-".$4."]";
-		     $read_length = $4-$3;
                      $id_and_seq_data{$read_id."_end"} = $id_and_seq_data{$read_id."_start"}+$read_length-1;
                      $id_and_seq_data{$read_id."_sc"} = "[".$id_and_seq_data{$read_id."_start"}."-".$id_and_seq_data{$read_id."_end"}."]";
                     }
@@ -211,7 +211,8 @@ my($self, $file_in, $gff_name, $index_file, $tab_file,$index_hash,$tab_index_fil
 my ($gff_annotation_handle,$gff_fasta_handle,$tab_handle) = FileHandle->new;
 my %tab_hash;
 my $fhline;
-   
+if(!(-e $gff_name."_final.gff")){
+    print "GFF FILE DOES NOT EXIST..CONVERTING...\n";
 ## TIE TAB TO A HASH ##
 if(-f $tab_index_file){
     open($tab_handle, ">$tab_file") or die $!;
@@ -268,6 +269,9 @@ my $concatenation_command = "cat $gff_name"."_ann.gff"." $gff_name"."_fas.gff"."
 system($concatenation_command);
 unlink("$gff_name"."_ann.gff");
 unlink("$gff_name"."_fas.gff");
+}else{
+    print "GFF FILE EXISTS. NO CONVERSION OCCURED";
+}
 }
 
 1;
