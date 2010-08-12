@@ -107,7 +107,7 @@ sub get_location_by_id{
     Title   : CXGN::BioTools::AceTools->get_contig_information($byte_location, $data_file, $contig_id)
     Usage   : $data_hash = get_contig_information($byte_location, $data_file, $contig_id);
     Function: Obtains all the information ( Read IDs & Sequences .. Contig ID && Sequence.. Coordinates) 
-              for the given $contig_id, retrieves and stores in a hash_ref.
+              for the given $contig_id, retrieves and stores in a hash_ref. -ONLY ONE CONTIG- NOT ALL CONTIGS IN AN ACE FILE-
     Returns : a $hash_reference ($id_and_seq_data in the method)
               Keys:(Abstract)                 Values:
                    contig_id_identifier            Program that created the assembly data
@@ -122,7 +122,7 @@ sub get_location_by_id{
 =cut
 sub get_contig_information{
 
-my ($self, $byte_location, $data_file, $contig_id) = @_;
+    my ($self, $byte_location, $data_file, $contig_id) = @_ or die "Right input not provided! Please check.";
 my ($seq_coord, $read_coord, $testline, $read_id);
 my ($sequence, $identifier) = "";
 my %id_and_seq_data;
@@ -135,31 +135,31 @@ my $data_handle= FileHandle->new;
 $data_handle-> open("< $data_file") or die "Can't open data handle: $!\n";
 seek($data_handle, $byte_location,0);
 ## Get Contig and Read IDs and reads
-while($stop eq "false" && defined(fileno($data_handle))){        
+while(defined(fileno($data_handle))){        
        my $line = <$data_handle>;
        if(!eof($data_handle)){
-           #Set all identifiers#
+           
 	   if($line=~m/$contig_id\s?\S+\s?(\S+)\s?/){
 	       $id_and_seq_data{$contig_id."_identifier"} = $1;
              
-	   }
+	   } #FOUND CONTIG#
            if($line=~m/^CO\s+(\S+)\s+(\S+)\s+/ && tell($data_handle) != -1){
               if (!($1 eq $contig_id)){close ($data_handle);}
 	      $id_and_seq_data{$1."_length"} = $2;
               $end="false";             
               $identifier = "CO";
-	     }
+	     }#FOUND READ#
 	   if(defined(fileno($data_handle))){
               if($line=~m/^RD\s+(\S+)\s+(\d+)/){
 	          $identifier = "RD";
 	          $read_id = $1; 
-		  $read_length=$2;
 	          $end= "false";
 	        }
              # check the appropriate tags 
              # 1. If identifier == CO, then store the lines as value for appropriate hash key
              # 2. If identifier == RD, then store the sequence as a value for read_id as key.
              # 3. If identifier == QA, then store the coordinates as values for appropriate keys.
+             # 4. If identifier == AF, then store the padded start coordinate as value for appropriate key.
              if( !($line =~ m/^(AS|BQ|BS|CT{|WA|DS|RT{)\s+/)){
                   if($identifier eq "CO" && !($line =~ m/^QA|CO/) && ($end eq "false")){
                       $id_and_seq_data{$contig_id} .= "".$line; 
@@ -169,20 +169,19 @@ while($stop eq "false" && defined(fileno($data_handle))){
                     }            
                   if($line=~m/^QA\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+/){
 	             $id_and_seq_data{$read_id."_rc"} = "[".$3."-".$4."]";
-                     $id_and_seq_data{$read_id."_end"} = $id_and_seq_data{$read_id."_start"}+$read_length-1;
+                     $read_length= $4-$3;
+                     $id_and_seq_data{$read_id."_end"} = $id_and_seq_data{$read_id."_start"}+$read_length;
                      $id_and_seq_data{$read_id."_sc"} = "[".$id_and_seq_data{$read_id."_start"}."-".$id_and_seq_data{$read_id."_end"}."]";
                     }
-		  if($line=~m/^AF\s?(\S+)\s?\S?\s?(\d*)/){                      
+		  if($line=~m/^AF\s?(\S+)\s?\S?\s?(\S*)(\d*)/){                      
                       my $read_id = $1;
-                      $id_and_seq_data{$read_id."_start"} = $2;		  
+                      $id_and_seq_data{$read_id."_start"} = $2.$3;		  
 		  }
              } else {
                 $end="true"; #reached end of sequence for specified read/contig
                }
 	  }
 	   
-       }else{
-         $stop = "true"; #reached end of parsing all NEEDED information
        }
 }        
 return \%id_and_seq_data;
@@ -201,7 +200,7 @@ return \%id_and_seq_data;
     Args    : -file_in           : ACE FILE to be converted
               -gff_file_out      : GFF FILE to be written to -> does not have to exist, will be created otherwise
               -index_file        : indexing file. (If non-existant, create using build_index_hash)
-              -tab_file          : tab file with 1st column: read ID, and 2nd column: sample
+              -tab_file          : tab file with 1st column: read ID, and 2nd column: sample => REQUIRED 
               -index_hash_ref    : hash ref with the byte locations (If non-existant, create using get_contig_info)
 =cut
 
@@ -212,7 +211,7 @@ my ($gff_annotation_handle,$gff_fasta_handle,$tab_handle) = FileHandle->new;
 my %tab_hash;
 my $fhline;
 if(!(-e $gff_name."_final.gff")){
-    print "GFF FILE DOES NOT EXIST..CONVERTING...\n";
+
 ## TIE TAB TO A HASH ##
 if(-f $tab_index_file){
     open($tab_handle, ">$tab_file") or die $!;

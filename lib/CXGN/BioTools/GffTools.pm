@@ -64,12 +64,12 @@ my  $offset= 0;
  
 if (-f $index_file){
      tie(my %index_hash, 'DB_File',"$index_file",O_RDONLY, 0666)
-         or die "Couldn't tie DB file $index_file: $!; aborting";
+         or die "Couldn't tie DB file $index_file: $!; Check permissions or existance! Aborting";
        return \%index_hash;
 } else {
    $data_handle-> open("< $data_file") or die "Can't open data handle: $!\n";
    tie(my  %index_hash, 'DB_File',"$index_file", O_CREAT|O_WRONLY, 0666)
-        or die "Couldn't tie DB file $index_file: $!; aborting";
+        or die "Couldn't tie DB file $index_file: $!; Check permissions or existance! Aborting";
    while ( <$data_handle>) {
         ## STORE CONTIG ANNOTATION LOCATION ##
          if ($_ =~ m/^(\S+)\t?(\S+)\t?contig?\t?/){
@@ -108,7 +108,7 @@ print "key like that does not exist!"
     Title   : get_contig_information
     Usage   : $data_hash = CXGN::BioTools::GffTools->get_contig_information($index_hash,$byte_location, $contig_id, $data_dir);
     Function: Obtains all the information ( Read IDs & Sequences .. Contig ID && Sequence.. Coordinates) 
-              for the given $contig_id, retrieves and stores in a hash_ref.
+              for the given $contig_id, retrieves and stores in a hash_ref. - ONLY ONE CONTIG - NOT ALL CONTIGS IN A GIVEN ACE FILE -
              Format of everything is stored in hash:
              - contigid_sc   : sequence coords of contig.
              - contigid      : sequence of contig
@@ -140,8 +140,8 @@ seek($data_handle, $location,0);
 ## obtain all the reads whose parent is this contig id
 while(defined(fileno($data_handle))){
      my $line =(<$data_handle>); 
-     print"$line \n";	
-     print "$contig_id \n";
+   #  print"$line \n";	
+   #  print "$contig_id \n";
      if(!(eof($data_handle))) { # if not the end of the file/undef. line
         if($line =~ m/$contig_id\t?(\S+)\t?contig\t?(\d?)\t?(\d+)\t?/) { #if contig line
             $location = tell($data_handle);
@@ -150,10 +150,10 @@ while(defined(fileno($data_handle))){
             CXGN::BioTools::GffTools->print_sequence(\%output_hash,$data_handle, $contig_id, $location);
           }        
 	elsif($line=~m/$contig_id?/){
-	    print " contig id matched \n";
+	#    print " contig id matched \n";
             my @line = split('\t',$line);
           # if($line=~m/^(\S+)\t?(\S+)\t?(\S+)\t?(\d?)\t?(\d+)\t?\.\t?\+\t?\.\t?(\S*)/){ # if read
-	   print " found read annotation\n";
+	 #  print " found read annotation\n";
 	     $location = tell($data_handle);
 	     my $read_id = $line[0];
              $output_hash{$read_id."_sc"} = "[".$line[3]."-".$line[4]."]";
